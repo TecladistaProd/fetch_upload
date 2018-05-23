@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Upload com Fetch</title>
+    <style>
+      *{
+        margin:0;
+        padding:0;
+        box-sizing: border-box;
+      }
+      body{
+        padding:3rem;
+        display: flex;
+        flex-flow: column wrap;
+        align-items: center;
+      }
+      form{
+        padding:1rem;
+        border:1px solid silver;
+        border-radius:4px;
+        display: flex;
+        flex-flow: column wrap;
+      }
+      button{
+        padding: .2rem;        
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Bem Vindo</h1>
+    <form>
+      <input type="file" id="file"/>
+      <br/>
+      <button type="submit">Enviar Arquivo</button>
+    </form>
+    <p></p>
+    <script>
+      let inFile = document.querySelector('#file')
+      let form = document.querySelector('form')
+      form.addEventListener('submit', e => {
+        e.preventDefault()
+        data = {
+          method: 'POST',
+          body: inFile.files[0]
+        }
+        form.querySelector('button').disabled = true
+        form.querySelector('button').innerText = 'Enviando ...'
+        fetch('/upload', data).then(e => e.json()).then(e =>{
+          e.url = location.href + e.url 
+          console.log(e)
+          inFile.value = ''
+          form.querySelector('button').disabled = false
+          form.querySelector('button').innerText = 'Enviar Arquivo'
+          document.querySelector('p').style.textAlign = 'center'
+          document.querySelector('p').innerHTML= `Arquivo Enviado Veja Aqui <br/> <a href="${e.url}">${e.url.split('upload/')[1]}</a>`
+        })
+      })
+    </script>
+  </body>
+</html>

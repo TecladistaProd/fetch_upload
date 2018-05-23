@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title></title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        :root {
+            --size: 17rem;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+        }
+
+        .container {
+            padding: 1rem;
+            overflow: auto;
+            height: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #ccc;
+            flex-flow: column nowrap;
+        }
+
+        .drop {
+            width: var(--size);
+            height: var(--size);
+            border: 4.5px dotted #333;
+            background: rgba(255, 255, 255, 1);
+            border-radius: 10%;
+            margin: .5rem;
+        }
+
+        .drop::after {
+            content: 'Drop your Archive to Upload Here';
+            display: flex;
+            font-family: 'helvetica';
+            font-size: .9rem;
+            line-height: var(--size);
+            justify-content: center;
+            height: 100%;
+        }
+
+        .lista {
+            display: flex;
+            flex-flow: column nowrap;
+        }
+
+        .modal {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.5);
+            width: 100%;
+            height: 100%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-flow: column;
+        }
+
+        .modal.is-active,
+        container {
+            overflow-x: hidden;
+            display: flex;
+        }
+
+        .modal .modal-body {
+            margin: 0 auto;
+            background-color: #fff;
+            max-width: 75vw;
+            max-height: 75vh;
+            background-size: cover;
+            background-repeat: no-repeat;
+        }
+
+        .modal .modal-body img,
+        .modal .modal-body video {
+            max-height: 70vh;
+            max-width: auto;
+        }
+
+        .modal span {
+            border-radius: 100%;
+            padding: .5rem;
+            background-color: #fff;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="modal">
+        <span>X</span>
+        <div class="modal-body"></div>
+    </div>
+    <div class="container">
+        <span>
+            <button>Enviar</button>
+        </span>
+        <input type="file" multiple hidden>
+        <div class="drop" draggable="true">
+        </div>
+        <div class="lista"></div>
+    </div>
+    <script>
+        window.onload = () => {
+            setTimeout(() => console.clear(), 500)
+            let drop = document.querySelector('.drop'),
+                preventList = [...'drag dragstart dragend dragover dragenter dragleave drop'.split(' ')],
+                //files = document.querySelector('input[type=file]'),
+                files = []
+            preventList.forEach(element => {
+                drop.addEventListener(element, e => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                })
+                document.addEventListener(element, e => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                })
+            })
+            'dragover dragenter'.split(' ').forEach(element => {
+                drop.addEventListener(element, () => {
+                    drop.style.background = 'rgba(255,255,255, 0.0)'
+                })
+            })
+            'dragleave dragend'.split(' ').forEach(element => {
+                drop.addEventListener(element, () => {
+                    drop.style.background = null
+                })
+            })
+            drop.addEventListener('drop', e => {
+                drop.style.background = null
+                Object.values(e.dataTransfer.files).forEach(item => {
+                    let a = document.createElement('a')
+                    a.dataset.key = files.length
+                    let f = false
+                    files.forEach(i => {
+                        if (i.lastModified === item.lastModified)
+                            f = true
+                    })
+                    files.push(item)
+                    a.innerText = item.name
+                    a.href = '#'
+                    document.querySelector('.lista').appendChild(a)
+                    document.querySelector('.lista').innerHTML += '<br/>'
+                    a = null
+                })
+                document.querySelectorAll('.lista a').forEach(a => {
+                    a.addEventListener('click', e => {
+                        let file = files[e.target.dataset.key]
+                        if (file.type.split('/')[0] === 'image') {
+                            document.querySelector('.modal').classList.add('is-active')
+                            let img = new FileReader()
+                            img.onloadend = f => {
+                                document.querySelector('.modal .modal-body').innerHTML = `<img src="${f.target.result}"/>`
+                            }
+                            img.readAsDataURL(file)
+                            //img.readAsBinaryString(files[e.target.dataset.key])
+                        } else if (file.type.split('/')[0] === 'video') {
+                            document.querySelector('.modal').classList.add('is-active')
+                            let vid = new FileReader()
+                            vid.onloadend = f => {
+                                let video = document.createElement('video')
+                                video.src = f.target.result
+                                video.controls = true
+                                video.onloadeddata = () => {
+                                    setTimeout(() => {
+                                        video.play()
+                                    }, 400)
+                                }
+                                document.querySelector('.modal .modal-body').appendChild(video)
+                            }
+                            vid.readAsDataURL(file)
+                        } else if (file.type.split('/')[0] === 'audio') {
+                            document.querySelector('.modal').classList.add('is-active')
+                            let aud = new FileReader()
+                            aud.onloadend = f => {
+                                let audio = document.createElement('audio')
+                                audio.src = f.target.result
+                                audio.controls = true
+                                audio.onloadeddata = () => {
+                                    setTimeout(() => {
+                                        audio.play()
+                                    }, 400)
+                                }
+                                document.querySelector('.modal .modal-body').appendChild(audio)
+                            }
+                            aud.readAsDataURL(file)
+                        }
+                    })
+                })
+            })
+            document.querySelector('.modal span').addEventListener('click', e => {
+                e.target.parentNode.classList.remove('is-active')
+                e.target.parentNode.querySelector('.modal-body').innerHTML = ''
+            })  
+
+            let envia = arr => {
+                return new Promise((resolve, reject)=>{
+                    arr.forEach(async item =>{
+                        let data = {
+                            method: 'POST',
+                            body: item
+                        }
+                        try{
+                            await fetch('/upload', data)
+                        } catch(err){
+                            reject(err)
+                        }
+                    })
+                    resolve('')
+                })
+            }
+            document.querySelector('button').addEventListener('click', e=>{
+                envia(files).then(e=>{
+                    files = []
+                    document.querySelector('.lista').innerHTML = ''
+                })
+            })
+        }
+    </script>
+</body>
+
+</html>
